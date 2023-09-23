@@ -9,6 +9,8 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,9 +24,11 @@ namespace AuctionService.Controllers
         private readonly AuctionDbContext _context;
         private readonly IMapper _mapper;
 
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public AuctionsController(AuctionDbContext context, IMapper mapper)
+        public AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         {
+            _publishEndpoint = publishEndpoint;
             _context = context;
             _mapper = mapper;
         }
@@ -55,23 +59,33 @@ namespace AuctionService.Controllers
         [HttpPost]
         public async Task<ActionResult<AuctionDTO>> CreateAuction(CreateAuctionDTO auctionDto)
         {
+            // 1) Map to Auction Entity objec
             var auction = _mapper.Map<Auction>(auctionDto);
 
             // TODO: Add current user as Seller
             auction.Seller = "test";
 
+            // 2) Add record to context
             _context.Auctions.Add(auction);
 
+            // 3) Map to Auction DTO 
+            var newAuction = _mapper.Map<AuctionDTO>(auction);
+
+            // 4) Map to AuctionCreated contract & publish to endpoint
+            await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
+            // 5) Save record
             var result = await _context.SaveChangesAsync() > 0;
 
+            // 6) Return either BadRequest or CreatedAtAction depending on successful save
             if (!result) return BadRequest("Could not save changes to the DB");
-
-            return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, _mapper.Map<AuctionDTO>(auction));
+            return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, newAuction);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<AuctionDTO>> UpdateAuction(Guid id, UpdateAuctionDTO auctionDto)
         {
+            // 1) Find record of the Auction being updated
             var auction = await _context.Auctions
                 .Include(x => x.Item)
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -80,6 +94,7 @@ namespace AuctionService.Controllers
 
             if (auction.Id != id) return NotFound();
 
+            // 2) Update Auction Entity with details of the the UpdateAuctionDTO
             // TODO: check Seller = username
 
             auction.Item.Make = auctionDto.Make ?? auction.Item.Make;
@@ -88,6 +103,10 @@ namespace AuctionService.Controllers
             auction.Item.Color = auctionDto.Color ?? auction.Item.Color;
             auction.Item.Mileage = auctionDto.Mileage ?? auction.Item.Mileage;
 
+            // 3) Map to to AuctionUpdated Contract & publish
+            await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
+            // 4) Save changed record in context & return correct response depending on success/fail.
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result) return Ok();
@@ -106,7 +125,7 @@ namespace AuctionService.Controllers
             // TODO: Check seller == username
 
             _context.Auctions.Remove(auction);
-
+            await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
             var result = await _context.SaveChangesAsync() > 0;
 
             if (!result) return BadRequest("Could not update DB");
