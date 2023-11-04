@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using SearchService.Models;
 using MongoDB.Entities;
 using SearchService.RequestHelpers;
-using ZstdSharp.Unsafe;
+
+
 
 namespace SearchService.Controllers
 {
@@ -14,6 +15,8 @@ namespace SearchService.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Item>>> SearchItems([FromQuery] SearchParams searchParams)
         {
+            Console.WriteLine("SEARCH PARAMS: ");
+            Console.WriteLine(searchParams);
             var query = DB.PagedSearch<Item, Item>();
 
             if (!string.IsNullOrEmpty(searchParams.SearchTerm))
@@ -48,6 +51,10 @@ namespace SearchService.Controllers
             query.PageSize(searchParams.PageSize);
 
             var result = await query.ExecuteAsync();
+
+            Console.WriteLine(query);
+
+            Console.WriteLine(result);
 
             return Ok(new
             {
