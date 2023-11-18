@@ -1,5 +1,17 @@
 {
     "workbench.colorTheme": "Default Dark Modern",
     "oneDarkPro.editorTheme": "Dark Modern",
-    "dotnet.defaultSolution": "Mauction.sln"
+    "dotnet.defaultSolution": "Mauction.sln",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Mauction",
+            "database": "auctions",
+            "username": "postgres",
+            "password": "postgrespw"
+        }
+    ]
 }
