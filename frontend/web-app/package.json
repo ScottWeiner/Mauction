@@ -9,12 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@microsoft/signalr": "^8.0.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@types/react-datepicker": "^4.19.3",
+    "bufferutil": "^4.0.8",
+    "date-fns": "^2.30.0",
+    "encoding": "^0.1.13",
     "flowbite": "^2.0.0",
     "flowbite-react": "^0.6.4",
     "next": "13.5.4",
     "next-auth": "^4.24.4",
+    "node-gyp-build": "^4.7.0",
     "query-string": "^8.1.0",
     "react": "^18",
     "react-countdown": "^2.3.5",
@@ -23,6 +28,8 @@
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
     "react-icons": "^4.11.0",
+    "utf-8-validate": "^5.0.10",
+    "ws": "^8.14.2",
     "zustand": "^4.4.6"
   },
   "devDependencies": {
